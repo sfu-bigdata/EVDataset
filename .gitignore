@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ contains project source modules and must be tracked.
 lib64/
 parts/
 sdist/
@@ -161,3 +161,13 @@ cython_debug/
 
 
 .DS_Store
+
+# Private configuration and local copies (use config.example.ini for setup)
+config.ini
+config.ini.*
+config.local.ini
+.env.*
+!.env.example
+
+# Local dataset files
+*.csv

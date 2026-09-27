@@ -1,5 +1,5 @@
-zeep==4.2.1
-boto3==1.28.2
-python-daemon==3.0.1
-numpy
-pandas
+zeep>=4.2.1,<5
+boto3>=1.28.2,<2
+pandas>=2.2,<3
+numpy>=1.26,<3
+requests>=2.31,<3

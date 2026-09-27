@@ -1,6 +1,6 @@
 # SFU-EVP / ChargePointDataset
 
-Download ChargePoint history and upload the dataset to IEEE DataPort using two foreground, single-run command-line tools. They do not create daemons, run background workers, or schedule recurring work.
+Download ChargePoint history and upload the dataset to IEEE DataPort using foreground, single-run command-line tools. They do not create daemons, run background workers, or schedule recurring work.
 
 ## Setup
 
@@ -41,9 +41,41 @@ Removing a tracked file does **not** erase earlier commits. If real keys were ev
 ./refresh_public-dataset.py
 ```
 
-Both scripts exit after one run: status 0 means success, 1 means failure, and 130 means interrupted. Use `--help` for options. Activate the environment first so the executable scripts find the installed dependencies. They can also be invoked by absolute path from another directory. Configuration selection and dataset path resolution are described above.
+All three scripts exit after one run: status 0 means success, 1 means failure, and 130 means interrupted. Use `--help` for options. Activate the environment first so the executable scripts find the installed dependencies. They can also be invoked by absolute path from another directory. Configuration selection and dataset path resolution are described above.
 
 The upload destination remains `s3://ieee-dataport/open/27422/11280/`. Files in `data/` and `log/` are uploaded under their basenames, preserving the original upload scope. Hidden/temporary files and directories are excluded. A dry run lists the exact files without contacting DataPort. Upload failures are reported, remaining files are attempted, and any failure produces a nonzero exit code.
+
+### Download the published dataset for a new setup
+
+After installing dependencies and configuring `[DataPort] api_key` and `secret` in the private configuration, run:
+
+```sh
+./download_public-dataset.py --dry-run
+./download_public-dataset.py
+```
+
+The utility reads the IEEE DataPort **Access on AWS** location `s3://ieee-dataport/open/27422/11280/`. It downloads direct `*.csv` files into `data/` and direct `*.log` files into `log/`, creating those directories when needed. Other file types and nested objects are ignored. This is the current IEEE source, not Harvard Dataverse. Anonymous listing is denied by IEEE DataPort, so this utility needs the private DataPort credentials; ChargePoint credentials are not used.
+
+| Remote file | Local destination |
+| --- | --- |
+| `AlarmData.log` | `log/AlarmData.log` |
+| `Alarms.csv` | `data/Alarms.csv` |
+| `Anomalies.csv` | `data/Anomalies.csv` |
+| `Sessions.csv` | `data/Sessions.csv` |
+| `SessionsData.log` | `log/SessionsData.log` |
+| `Stations.csv` | `data/Stations.csv` |
+| `StationsData.log` | `log/StationsData.log` |
+| `upload.log` | `log/upload.log` |
+
+For every existing destination file, the utility asks:
+
+```text
+overwrite Sessions.csv (y/n)?
+```
+
+Answer `y` to replace that file or `n` to keep it and continue. Each file receives its own prompt; invalid answers are requested again. If input is unavailable, the existing file is kept. New files download without a prompt. Downloading uses temporary files followed by atomic replacement, so an interrupted or failed transfer preserves the existing file. Individual failures are reported while remaining files are attempted. Exit status is 0 for completion (including declined overwrites), 1 for failures, or 130 for interruption.
+
+`--dry-run` lists the remote files and destinations without downloading or prompting. `--config` and `[Paths] root` work as for the other commands; paths do not depend on the current terminal directory. Downloads preserve the published contents as-is, including any existing anomaly rule versions. The utility does not update ChargePoint history or upload anything.
 
 ## Canadian ChargePoint service
 
@@ -95,7 +127,8 @@ The original analysis is available in `analysis/chargepoint_analysis.ipynb`, usi
 
 ## Repository layout
 
-- `download_chargepoint-data.py`: executable download command.
+- `download_public-dataset.py`: executable command to initialize local data/log files from IEEE DataPort.
+- `download_chargepoint-data.py`: executable ChargePoint history update command.
 - `refresh_public-dataset.py`: executable IEEE DataPort upload command.
 - `lib/`: supporting API client, configuration/storage utilities, and anomaly checks.
 - `tests/`: regression tests.
